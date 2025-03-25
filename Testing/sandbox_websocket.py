@@ -1,4 +1,5 @@
 import websocket, json
+import pandas as pd
 from config import *
 
 socket = "wss://stream.data.alpaca.markets/v2/delayed_sip"
@@ -32,10 +33,18 @@ def on_open(ws):
 
     # e.g. [{"T":"b","S":"NBIS","o":28.04,"h":28.13,"l":27.87,"c":27.87,"v":184101,"t":"2025-03-17T14:02:00Z","n":756,"vw":27.998943}]
 
-
+df_list = []
 def on_message(ws, message):
     print("received message")
     print(message)
+    to_dict = json.loads(message) 
+    
+    if len(to_dict[0].keys()) == 10:
+        dict_to_df = pd.DataFrame(to_dict[0], index = [0])
+        df_list.append(dict_to_df)
+
+        df = pd.concat(df_list, ignore_index=True)
+        print(df)
 
 
 def on_close(ws):
