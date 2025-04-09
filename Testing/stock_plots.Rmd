@@ -1,0 +1,93 @@
+---
+title: "Stock"
+output: html_document
+date: "2025-04-09"
+---
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(quantmod)
+library(dplyr)
+library(purrr)
+library(here)
+library(TTR)
+library(ggplot2)
+library(blastula)
+
+source(file.path(here(), "fn", "functions.R"))
+# Get a nicely formatted date/time string
+date_time <- add_readable_time()
+
+```
+Good Morning:
+
+This is your daily portfolio report, sent on `r date_time`. 
+
+---
+
+### Overall Portfolio
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+symbols <- c("VDE",
+             "VOO",
+             "QQQM",
+             "QQQ",
+             "VYM",
+             "COST",
+             "AAPL",
+             "GOOGL",
+             "AMZN",
+             "JPM",
+             "MSFT",
+             "NVDA",
+             "BYDDY",
+             "BABA",
+             "V"
+             )
+
+# gather list of stocks 
+stock_df <- map(symbols, ~getSymbols(.x, src='yahoo', from="2019-01-02", auto.assign=FALSE))
+names(stock_df) <- symbols
+
+# stack data
+main_df <- map_df(
+  symbols,
+  ~clean_data(.x, data = stock_df)
+) 
+
+constructs <-  main_df %>% 
+  group_by(stock) %>% 
+  mutate(
+    # SMA
+    sma_50  = TTR::SMA(Close, n = 50),
+    sma_100 = TTR::SMA(Close, n = 100),
+    
+    # EMA
+    ema_63  = TTR::EMA(Close, n = 63),
+    
+    
+    pct_mavg = (sma_50/lag(sma_50, n = 50) - 1) * 100,
+    pct_emavg = (ema_63/lag(ema_63, n = 63) - 1) * 100
+    
+  ) %>% ungroup()
+
+split_df <- split(constructs, constructs$stock)
+list_infl <- map(symbols, ~get_inflections(.x, df = split_df))
+names(list_infl) <- symbols
+
+```
+
+```{r, echo=FALSE, results='asis'}
+
+imls_slides <- lapply(symbols, function(x) {
+  knitr::knit_child(text = c(
+    '## "`r x`"',
+    '',
+    '```{r, echo=FALSE}',
+    'plot_stock(x, data = stock_df, time = "last 2 years")',
+    'get_inflections(x, df = split_df)',
+    '```',
+    '---',
+    '---',
+    ''
+  ), envir = environment(), quiet = TRUE)
+})
+cat(unlist(imls_slides), sep = '\n')

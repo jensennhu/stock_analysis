@@ -33,7 +33,12 @@ def on_open(ws):
 
     # e.g. [{"T":"b","S":"NBIS","o":28.04,"h":28.13,"l":27.87,"c":27.87,"v":184101,"t":"2025-03-17T14:02:00Z","n":756,"vw":27.998943}]
 
+# read in archived data for specified stock
+# determine levels of support and resistance
+archived_data
+
 df_list = []
+df_list.append(archived_data)
 def on_message(ws, message):
     print("received message")
     print(message)
@@ -45,6 +50,10 @@ def on_message(ws, message):
 
         df = pd.concat(df_list, ignore_index=True)
         print(df)
+
+        # add calculation of indicators
+        
+
 
 
 def on_close(ws):
