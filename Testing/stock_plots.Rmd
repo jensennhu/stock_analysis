@@ -1,7 +1,14 @@
 ---
 title: "Stock"
-output: html_document
 date: "2025-04-09"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    social: menu
+    source_code: https://github.com/walkerke/neighborhood_diversity
+    theme: simplex
+
 ---
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(quantmod)
@@ -10,20 +17,21 @@ library(purrr)
 library(here)
 library(TTR)
 library(ggplot2)
+library(plotly)
+library(dash)
 library(blastula)
+library(crosstalk)
 
 source(file.path(here(), "fn", "functions.R"))
 # Get a nicely formatted date/time string
 date_time <- add_readable_time()
 
 ```
-Good Morning:
-
-This is your daily portfolio report, sent on `r date_time`. 
+Good Morning: This is your daily portfolio report, updated on `r date_time`. 
 
 ---
 
-### Overall Portfolio
+<!-- ### Overall Portfolio -->
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 symbols <- c("VDE",
@@ -44,7 +52,7 @@ symbols <- c("VDE",
              )
 
 # gather list of stocks 
-stock_df <- map(symbols, ~getSymbols(.x, src='yahoo', from="2019-01-02", auto.assign=FALSE))
+stock_df <- map(symbols, ~getSymbols(.x, src='yahoo', from="2010-01-02", auto.assign=FALSE))
 names(stock_df) <- symbols
 
 # stack data
@@ -63,11 +71,19 @@ constructs <-  main_df %>%
     # EMA
     ema_63  = TTR::EMA(Close, n = 63),
     
-    
     pct_mavg = (sma_50/lag(sma_50, n = 50) - 1) * 100,
-    pct_emavg = (ema_63/lag(ema_63, n = 63) - 1) * 100
+    pct_emavg = (ema_63/lag(ema_63, n = 63) - 1) * 100,
+    
+    diff_prev  = Close- lag(Close) ,
+    perc_prev  = (diff_prev/abs(lag(Close))),
+    diff_week  = Close- lag(Close, 7) ,
+    perc_week  = (diff_prev/abs(lag(Close, 7))),
+    diff_month = Close- lag(Close, 30) ,
+    perc_month = (diff_prev/abs(lag(Close, 30)))
     
   ) %>% ungroup()
+
+
 
 split_df <- split(constructs, constructs$stock)
 list_infl <- map(symbols, ~get_inflections(.x, df = split_df))
@@ -75,19 +91,39 @@ names(list_infl) <- symbols
 
 ```
 
-```{r, echo=FALSE, results='asis'}
+<!-- Main -->
+<!-- ====================================================================== -->
 
-imls_slides <- lapply(symbols, function(x) {
-  knitr::knit_child(text = c(
-    '## "`r x`"',
-    '',
-    '```{r, echo=FALSE}',
-    'plot_stock(x, data = stock_df, time = "last 2 years")',
-    'get_inflections(x, df = split_df)',
-    '```',
-    '---',
-    '---',
-    ''
-  ), envir = environment(), quiet = TRUE)
-})
-cat(unlist(imls_slides), sep = '\n')
+Column {data-width=400}
+-----------------------------------------------------------------------
+### Summary Table
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+constructs %>% 
+  slice_max(date) %>% 
+  select(stock, High, Low, Close, starts_with("perc")) %>% 
+  DT::datatable(
+    options = list(pageLength = 30, autoWidth = TRUE)
+  ) %>% 
+  DT::formatStyle(
+    c("perc_prev", "perc_week", "perc_month"),
+    backgroundColor = DT::styleInterval(0, c('pink', 'lightgreen'))
+    ) %>% 
+  DT::formatPercentage(c("perc_prev", "perc_week", "perc_month"),1) %>% 
+  DT::formatRound(c("High", "Low", "Close"), 2)
+```
+
+-------------------------------------
+
+## sidebar {.tabset}
+
+### Interactive Plot
+```{r, echo=FALSE, results='asis'}
+plotly_stock(sym = 'AAPL', data = constructs)
+```
+
+### Static Plot
+```{r, echo=FALSE, results='asis'}
+plot_stock('AAPL', data = stock_df, time = "last 2 month")
+#get_inflections('AAPL', df = split_df)
+```
+

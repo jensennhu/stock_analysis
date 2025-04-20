@@ -18,6 +18,17 @@ plot_stock <- function(data, sym, time = ""){
   chartSeries(df, name=sym, subset = time, theme=chartTheme("white"))
 }
 
+
+plotly_stock <- function(data, sym){
+  data %>% 
+    filter(stock == UQ(sym)) %>% 
+    plot_ly(x = ~date, type="candlestick",
+                 open = ~Open, close = ~Close,
+                 high = ~High, low = ~Low) %>% 
+    layout(title = paste0(sym, "Chart"))
+  
+}
+
 get_inflections <- function(sym, df){
   data <- df[[sym]]
   updn <- c(0, diff(sign(data[["pct_emavg"]])))
