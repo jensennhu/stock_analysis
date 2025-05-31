@@ -11,9 +11,7 @@ library(here)
 library(TTR)
 library(ggplot2)
 library(plotly)
-library(dash)
 library(blastula)
-library(crosstalk)
 
 source(file.path(here(), "fn", "functions.R"))
 # Get a nicely formatted date/time string
