@@ -1,0 +1,194 @@
+---
+title: "Portfolio of Stocks"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: simplex
+runtime: shiny
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(quantmod)
+library(dplyr)
+library(purrr)
+library(here)
+library(TTR)
+library(ggplot2)
+library(plotly)
+library(dash)
+library(blastula)
+library(crosstalk)
+library(tseries)
+library(forecast)
+library(timetk)
+
+source(file.path(here(), "fn", "functions.R"))
+source("https://raw.githubusercontent.com/business-science/tidyquant/refs/heads/master/R/ggplot-geom_chart.R")
+# Get a nicely formatted date/time string
+date_time <- add_readable_time()
+
+```
+
+```{r data, include=FALSE}
+
+symbols <- c("VDE",
+             "VOO",
+             "QQQM",
+             "QQQ",
+             "VYM",
+             "COST",
+             "AAPL",
+             "GOOGL",
+             "AMZN",
+             "JPM",
+             "MSFT",
+             "NVDA",
+             "BYDDY",
+             "BABA",
+             "PANW",
+             "V"
+             )
+
+# gather list of stocks 
+stocks <- map(symbols, ~getSymbols(.x, src='yahoo', from="2010-01-02", auto.assign=FALSE))
+names(stocks) <- symbols
+
+# stack data
+stock_df <- map_df(
+  symbols,
+  ~clean_data(.x, data = stocks)
+) 
+
+constructs <-  stock_df %>% 
+  group_by(stock) %>% 
+  mutate(
+    # SMA
+    sma_50  = TTR::SMA(Close, n = 50),
+    sma_200 = TTR::SMA(Close, n = 200),
+    
+    # EMA
+    ema_63  = TTR::EMA(Close, n = 63),
+    
+    pct_mavg = (sma_50/lag(sma_50, n = 50) - 1) * 100,
+    pct_emavg = (ema_63/lag(ema_63, n = 63) - 1) * 100,
+    
+    # difference - curr and prev close
+    diff_prev  = Close- lag(Close),
+    # % change - curr and prev close
+    perc_prev  = (diff_prev/abs(lag(Close))),
+    # week
+    diff_week  = Close- lag(Close, 7) ,
+    perc_week  = (diff_prev/abs(lag(Close, 7))),
+    # month
+    diff_month = Close- lag(Close, 30) ,
+    perc_month = (diff_prev/abs(lag(Close, 30)))
+    
+    
+    
+  ) %>% 
+  ungroup()
+
+# split_df <- split(constructs, constructs$stock)
+# list_infl <- map(symbols, ~get_inflections(.x, df = split_df))
+# names(list_infl) <- symbols
+
+```
+
+Column {data.width = 100}
+-------------------------------------------------------------
+
+```{r}
+library(shiny)
+selectInput("stock", 
+            label = "Select stock:",
+            choices = symbols, 
+            selected = "VOO")
+
+sym <- reactive({input$stock})
+df <-  reactive({constructs[constructs["stock"] == sym(),] })
+
+get_inflections <- function(df){
+  updn <- c(0, diff(sign(df[["pct_emavg"]])))
+  ix <- which(updn != 0)
+  # date of inflection points
+  df$date[ix]
+}
+
+```
+### test
+```{r}
+
+constructs %>% 
+    slice_max(date) %>% 
+    select(stock, Close, starts_with("perc")) %>% 
+      DT::datatable(
+      options = list(pageLength = 30, autoWidth = TRUE)
+    ) %>% 
+    DT::formatStyle(
+      c("perc_prev", "perc_week", "perc_month"),
+      backgroundColor = DT::styleInterval(0, c('pink', 'lightgreen'))
+      ) %>% 
+    DT::formatPercentage(c("perc_prev", "perc_week", "perc_month"),1) %>% 
+    DT::formatRound(c("Close"), 2)
+
+
+# constructs %>% 
+#     group_by(stock) %>% 
+#     summarize(l1 = as.character(sparkline::spk_chr(Close,
+#                                       type = "line",
+#                                       lineColor = 'black', 
+#                                       fillColor = '#ccc',
+#                                       width = 250,
+#                                       height = 80,
+#                                       highlightLineColor = 'red', 
+#                                       highlightSpotColor = 'purple'))) %>% 
+#     DT::datatable(escape = F,
+#               rownames = F,
+#               options = list(fnDrawCallback = htmlwidgets::JS('function(){
+#                                                               HTMLWidgets.staticRender();
+#                                                               }'))) %>% 
+#     sparkline::spk_add_deps()
+
+
+```
+
+
+Column{data.width = 800}
+-------------------------------------------------------------
+
+### Forecasting (ARIMA) the next 100 days
+
+```{r}
+
+modelfit <- reactive({auto.arima(df()$Close, stepwise = TRUE, lambda = NULL)})
+price_forecast <- reactive({forecast(modelfit(), h=100)})
+
+last_date <- reactive({tail(df()$date, 1)})
+fc_stock <- reactive({price_forecast() %>%  as_tibble() %>% mutate(date = seq.Date(last_date()+1, last_date()+100, 1))})
+
+renderPlot({
+
+  df() %>% 
+    tail(365) %>% 
+    bind_rows(fc_stock()) %>%
+    ggplot(aes(date, Close)) +
+    geom_line() +
+    geom_point(shape = 21) +
+    geom_ribbon(aes(ymin = `Lo 95`, ymax = `Hi 95`), fill = "grey80") +
+    geom_point(aes(y = `Point Forecast`), colour = "blue") +
+    labs(title = "Forecast (95%)")
+})
+```
+
+<!-- ### Forecast -->
+
+<!-- ```{r} -->
+<!-- modelfit <- reactive({auto.arima(df()$Close, stepwise = TRUE, lambda = NULL)}) -->
+<!-- price_forecast <- reactive({forecast(modelfit(), h=360)}) -->
+
+<!-- renderPlot({ -->
+<!--   plot(price_forecast()) -->
+<!-- }) -->
+<!-- ``` -->
+

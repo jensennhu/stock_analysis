@@ -20,8 +20,8 @@ plot_stock <- function(data, sym, time = ""){
 
 
 plotly_stock <- function(data, sym){
+  data <- data[[sym]]
   data %>% 
-    filter(stock == UQ(sym)) %>% 
     plot_ly(x = ~date, type="candlestick",
                  open = ~Open, close = ~Close,
                  high = ~High, low = ~Low) %>% 

@@ -4,7 +4,7 @@ from config import *
 
 socket = "wss://stream.data.alpaca.markets/v2/delayed_sip"
 
-tickers = "NBIS"
+tickers = "AAPL"
 
 def on_open(ws):
     print("opened")
@@ -35,10 +35,10 @@ def on_open(ws):
 
 # read in archived data for specified stock
 # determine levels of support and resistance
-archived_data
+
 
 df_list = []
-df_list.append(archived_data)
+# df_list.append(archived_data)
 def on_message(ws, message):
     print("received message")
     print(message)
@@ -49,16 +49,19 @@ def on_message(ws, message):
         df_list.append(dict_to_df)
 
         df = pd.concat(df_list, ignore_index=True)
+        df.to_csv('../0_data/test.csv', mode='w', index=False)
         print(df)
 
         # add calculation of indicators
-        
+    
 
-
-
-def on_close(ws):
+def on_close(ws, close_status_code, close_msg):
     print("closed connection")
+    df = pd.read_csv('../0_data/test.csv')
+    df.to_csv('../0_data/archived.csv')
 
-ws = websocket.WebSocketApp(socket, on_open = on_open, on_message=on_message, on_close= on_close)
+
+
+ws = websocket.WebSocketApp(socket, on_open = on_open, on_message=on_message, on_close=on_close)
 
 ws.run_forever()
