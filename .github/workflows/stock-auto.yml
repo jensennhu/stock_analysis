@@ -50,9 +50,7 @@ jobs:
           install.packages('here')
           install.packages('ggplot2')
           install.packages('plotly')
-          install.packages('dash')
           install.packages('blastula')
-          install.packages('crosstalk')
 
         shell: Rscript {0}
 
