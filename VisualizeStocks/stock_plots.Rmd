@@ -12,9 +12,8 @@ library(TTR)
 library(ggplot2)
 library(plotly)
 library(blastula)
-
-print(file.path(here()))
-source(file.path(here("fn/functions.R")))
+source(here("functions.R"))
+source(here("fn", "functions.R"))
 # Get a nicely formatted date/time string
 date_time <- add_readable_time()
 
