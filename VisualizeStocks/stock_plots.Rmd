@@ -12,6 +12,8 @@ library(TTR)
 library(ggplot2)
 library(plotly)
 library(blastula)
+library(DT)
+
 source("functions.R")
 # source(here("fn", "functions.R"))
 # Get a nicely formatted date/time string
