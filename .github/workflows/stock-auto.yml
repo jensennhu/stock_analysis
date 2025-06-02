@@ -51,6 +51,7 @@ jobs:
           install.packages('ggplot2')
           install.packages('plotly')
           install.packages('blastula')
+          install.packages('fontawesome')
 
         shell: Rscript {0}
 
