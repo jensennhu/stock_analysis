@@ -46,6 +46,7 @@ jobs:
           install.packages('dplyr')
           install.packages('purrr')
           install.packages('TTR')
+          install.packages('DT')
           install.packages('here')
           install.packages('ggplot2')
           install.packages('plotly')
