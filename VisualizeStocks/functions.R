@@ -15,7 +15,9 @@ clean_data <- function(sym, data){
 
 plot_stock <- function(data, sym, time = ""){
   df <- data[[sym]]
-  chartSeries(df, name=sym, subset = time, theme=chartTheme("white"))
+  plot <- chartSeries(df, name=sym, subset = time, theme=chartTheme("white"))
+  # chartSeries contains many objs - @call for chart
+  return(plot@call)
 }
 
 
