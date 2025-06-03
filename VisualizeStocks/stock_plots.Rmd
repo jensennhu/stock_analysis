@@ -20,7 +20,7 @@ source("functions.R")
 date_time <- add_readable_time()
 
 # detail crosswalk
-cx <- read.csv(here("Data", "nasdaq_screener.csv"))
+cx <- read.csv(here("VisualizeStocks", "Data", "nasdaq_screener.csv"))
 ```
 Good Morning: This is a daily review of the stocks in your portfolio, updated on `r date_time`. The data is lagged by ~1 day.
 
