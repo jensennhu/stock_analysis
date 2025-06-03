@@ -15,7 +15,9 @@ library(blastula)
 library(DT)
 library(fontawesome)
 
-source("functions.R")
+# proj functions
+source(here("VisualizeStocks", "fn", "functions.R"))
+
 # Get a nicely formatted date/time string
 date_time <- add_readable_time()
 
