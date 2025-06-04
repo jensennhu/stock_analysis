@@ -1,0 +1,176 @@
+---
+title: "Portfolio of Stocks"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(quantmod)
+library(dplyr)
+library(purrr)
+library(here)
+library(TTR)
+library(ggplot2)
+library(plotly)
+library(blastula)
+library(DT)
+library(fontawesome)
+
+# proj functions
+source(here("VisualizeStocks", "fn", "functions.R"))
+
+# Get a nicely formatted date/time string
+date_time <- add_readable_time()
+
+# detail crosswalk
+cx <- read.csv(here("VisualizeStocks", "Data", "nasdaq_screener.csv")) %>% janitor::clean_names()
+subset <- cx %>% 
+  # string to numeric 
+  mutate(
+    x_change  = as.numeric(gsub("%", "", x_change)),
+    last_sale = as.numeric(gsub('\\$|,', '', last_sale))
+  ) %>% 
+  # subset to stocks w/5+ price
+  filter(
+    last_sale > 5
+  )
+
+# eval industries
+subset %>% 
+  group_by(industry) %>% 
+  summarise(
+    mean = round(mean(x_change, na.rm = TRUE), 2), 
+    max = max(x_change),
+    count = n()) %>% 
+  filter(count > 10) %>% 
+  datatable()
+
+metals <- subset %>% filter(industry == "Precious Metals") %>% select(symbol) %>% pull()
+package_food <- subset %>% filter(industry == "Oil & Gas Production") %>% select(symbol) %>% pull()
+
+```
+Good Morning: This is a daily review of the stocks in your portfolio, updated on `r date_time`. The data is lagged by ~1 day.
+
+---
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+symbols <- package_food
+
+symbols <- sort(symbols)
+
+getStockData <- function(sym){
+  tryCatch(
+    {quantmod::getSymbols(sym, src='yahoo', from="2024-01-02", auto.assign=FALSE)}, error = function(msg){
+    return(NA)})
+  }
+
+# gather list of stocks 
+stock_df <- map(symbols, ~getStockData(.x))
+
+# remove stocks w/o data
+no_data <- which(is.na(stock_df))
+ne_data <- which(map(stock_df, ~nrow(.x)<7) == TRUE)
+rm_stock <- c(no_data, ne_data)
+if(!is_empty(rm_stock)){
+  stock_df <- stock_df[-rm_stock]
+  symbols  <- symbols[-rm_stock] 
+}
+names(stock_df) <- symbols
+
+# stack data
+main_df <- map_df(
+  symbols,
+  ~clean_data(.x, data = stock_df)
+) 
+
+constructs <-  main_df %>% 
+  group_by(stock) %>% 
+  mutate(
+    # --- Volume Calculations --- 
+    sma_vol   = TTR::EMA(Volume, n = 7),
+    diff_vol   = sma_vol- lag(sma_vol, 7) ,
+    pct_vol  = (diff_vol/lag(sma_vol, 7) - 1) * 100,
+    
+    # --- Price Averages ---
+    ema_close  = TTR::EMA(Close, n = 7),
+    pct_emavg = (ema_close/lag(ema_close, 7) - 1) * 100,
+    
+    # --- Price Changes ---
+    # Daily 
+    diff_prev  = Close- lag(Close) ,
+    DayOverDay  = (diff_prev/abs(lag(Close))),
+    
+    # Weekly
+    diff_week  = Close- lag(Close, 7) ,
+    WeekOverWeek  = (diff_week/abs(lag(Close, 7))),
+    
+    # Monthly
+    diff_month = Close- lag(Close, 30) ,
+    MonthOverMonth = (diff_month/abs(lag(Close, 30))),
+    
+    # Year
+    diff_year = Close- lag(Close, 252) ,
+    YearOverYear = (diff_year/abs(lag(Close, 30)))
+    
+  ) %>%
+  ungroup() %>%
+  left_join(
+    cx,
+    by = c("stock" = "symbol")
+  )
+  
+
+split_df <- split(constructs, constructs$stock)
+list_infl <- map(symbols, ~get_inflections(.x, df = split_df))
+names(list_infl) <- symbols
+
+```
+##  {.tabset}
+
+### Summary Table
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+constructs %>% 
+  slice_max(date) %>% 
+  mutate(
+    delta_volume = ifelse(pct_vol > 0, fa(name = "arrow-up", fill = "green"), 
+                  ifelse(pct_vol < 0, fa(name = "arrow-down", fill = "red"), "")),
+    delta_close  = ifelse(pct_emavg > 0, fa(name = "arrow-up", fill = "green"), 
+                  ifelse(pct_emavg < 0, fa(name = "arrow-down", fill = "red"), ""))
+    ) %>% 
+  select(name, stock, Close, DayOverDay, WeekOverWeek, MonthOverMonth, YearOverYear, delta_volume, delta_close) %>% 
+  DT::datatable(
+    escape = FALSE,
+    options = list(pageLength = 30, autoWidth = TRUE)
+  ) %>% 
+  DT::formatStyle(
+    c("DayOverDay", "WeekOverWeek", "MonthOverMonth", "YearOverYear"),
+    backgroundColor = DT::styleInterval(0, c('pink', 'lightgreen'))
+    ) %>% 
+  DT::formatPercentage(c("DayOverDay", "WeekOverWeek", "MonthOverMonth", "YearOverYear"),1) %>% 
+  DT::formatRound(c("Close"), 2)
+
+```
+
+### Charts {.tabset}
+```{r, echo=FALSE, results='asis'}
+
+imls_slides <- lapply(symbols, function(x) {
+  knitr::knit_child(text = c('',
+    '#### `r x` {.tabset}',
+    '##### `r x` Static 2mo',
+    '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE}',
+    'plot_stock(x, data = stock_df, time = "last 2 month")',
+    '```',
+    '##### `r x`Static 1yr',
+    '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE}',
+    'plot_stock(x, data = stock_df, time = "last 1 year")',
+    '```',
+    '##### `r x` Interactive',
+    '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE}',
+    'plotly_stock(x, data = split_df)',
+    '```',
+    ''
+  ), envir = environment(), quiet = TRUE)
+})
+cat(unlist(imls_slides), sep = '\n')
+```
+

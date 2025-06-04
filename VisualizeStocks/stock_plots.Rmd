@@ -29,7 +29,7 @@ Good Morning: This is a daily review of the stocks in your portfolio, updated on
 ---
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-symbols <- c("AAPL", "COST", "JPM", "GOOGL", "AMZN", "BGSAX", "NET", "VUG", "MSFT", "PRWCX", "NVDA", "DODGX", "PRGTX", "VOO", "VEIRX", "VTSAX", "BYDDY", "VWILX", "V", "VDADX", "QQQM", "QQQ", "VYM", "SCHD", "O", "TSM", "BABA", "VDE", "NBIS", "GELYF", "BA", "EL", "TCMD")
+symbols <- c("AAPL", "COST", "JPM", "GOOGL", "AMZN", "BGSAX", "NET", "VUG", "MSFT", "PRWCX", "NVDA", "DODGX", "PRGTX", "VOO", "VEIRX", "VTSAX", "BYDDY", "VWILX", "V", "VDADX", "QQQM", "QQQ", "VYM", "SCHD", "O", "TSM", "BABA", "VDE", "NBIS", "GELYF", "BA", "EL", "TCMD", "CRWV")
 
 
 symbols <- sort(symbols)
