@@ -12,6 +12,7 @@ library(TTR)
 library(ggplot2)
 library(plotly)
 library(blastula)
+library(data.table)
 library(DT)
 library(fontawesome)
 
@@ -62,12 +63,16 @@ constructs <-  main_df %>%
     DayOverDay = (diff_prev/abs(lag(Close))),
     
     # Weekly
-    diff_week     = Close- lag(Close, 7) ,
-    WeekOverWeek  = (diff_week/abs(lag(Close, 7))),
+    diff_week     = Close- lag(Close, 5) ,
+    WeekOverWeek  = (diff_week/abs(lag(Close, 5))),
     
     # Monthly
     diff_month     = Close- lag(Close, 30) ,
-    MonthOverMonth = (diff_month/abs(lag(Close, 30)))
+    MonthOverMonth = (diff_month/abs(lag(Close, 30))),
+    
+    # Yearly
+    diff_year      = Close- lag(Close, 252) ,
+    YearOverYear = (diff_month/abs(lag(Close, 252)))
     
   ) %>% 
   ungroup() %>% 
@@ -75,7 +80,15 @@ constructs <-  main_df %>%
     cx,
     by = c("stock" = "Symbol")
   )
+
+constructs <- constructs %>% 
+  mutate(group = rleid(DayOverDay > 0 & !is.na(DayOverDay))) %>% 
+  group_by(group) %>% 
+  mutate(consecutive = ifelse(is.na(DayOverDay), NA, row_number())) %>% 
+  ungroup() %>% 
+  select(-group)
   
+constructs$trend <- ifelse(constructs$DayOverDay > 0, paste0(constructs$consecutive, "+ increase"), ifelse(constructs$DayOverDay < 0, paste0(constructs$consecutive, "- decrease"), ""))
 
 split_df <- split(constructs, constructs$stock)
 list_infl <- map(symbols, ~get_inflections(.x, df = split_df))
@@ -94,16 +107,16 @@ constructs %>%
     delta_close  = ifelse(pct_emavg > 0, fa(name = "arrow-up", fill = "green"), 
                   ifelse(pct_emavg < 0, fa(name = "arrow-down", fill = "red"), ""))
     ) %>% 
-  select(stock, Close, DayOverDay, WeekOverWeek, MonthOverMonth, delta_volume, delta_close) %>% 
+  select(stock, Close, DayOverDay, WeekOverWeek, MonthOverMonth, YearOverYear, delta_volume, delta_close, trend) %>% 
   DT::datatable(
     escape = FALSE,
     options = list(pageLength = 30, autoWidth = TRUE)
   ) %>% 
   DT::formatStyle(
-    c("DayOverDay", "WeekOverWeek", "MonthOverMonth"),
+    c("DayOverDay", "WeekOverWeek", "MonthOverMonth", "YearOverYear"),
     backgroundColor = DT::styleInterval(0, c('pink', 'lightgreen'))
     ) %>% 
-  DT::formatPercentage(c("DayOverDay", "WeekOverWeek", "MonthOverMonth"),1) %>% 
+  DT::formatPercentage(c("DayOverDay", "WeekOverWeek", "MonthOverMonth", "YearOverYear"),1) %>% 
   DT::formatRound(c("Close"), 2)
 
 ```
