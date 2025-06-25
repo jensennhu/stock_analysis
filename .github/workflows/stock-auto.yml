@@ -52,6 +52,8 @@ jobs:
           install.packages('plotly')
           install.packages('blastula')
           install.packages('fontawesome')
+          install.packages('PerformanceAnalytics')
+          install.packages('lubridate')
 
         shell: Rscript {0}
 
