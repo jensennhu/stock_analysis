@@ -19,7 +19,6 @@ library(data.table)
 library(fontawesome)
 library(lubridate)
 library(PerformanceAnalytics)
-library(janitor)
 
 # proj functions
 source(here("VisualizeStocks", "fn", "functions.R"))
@@ -28,7 +27,7 @@ source(here("VisualizeStocks", "fn", "functions.R"))
 date_time <- add_readable_time()
 
 # detail crosswalk
-cx <- read.csv(here("VisualizeStocks", "Data", "nasdaq_screener.csv")) %>% janitor::clean_names()
+cx <- read.csv(here("VisualizeStocks", "Data", "nasdaq_screener.csv")) 
 # subset <- cx %>% 
 #   # string to numeric 
 #   mutate(
