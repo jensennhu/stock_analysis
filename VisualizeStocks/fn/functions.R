@@ -218,10 +218,10 @@ eval_strategy <- function(results){
 }
 
 plot_strategy <- function(data){
-  tryCatch({
+  plt <- tryCatch({
     # Visualization: Trading Signals
     data %>% 
-      #na.omit() %>%
+      na.omit() %>%
       mutate(execute = as.character(ifelse(execute == 0, NA, execute))) %>% 
       # Remove rows with missing values
       ggplot(aes(x = date)) +
@@ -236,4 +236,5 @@ plot_strategy <- function(data){
       theme_minimal()}, error = function(msg){
         return(NA)
     })
+  return(plt)
 }

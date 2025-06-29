@@ -1,7 +1,9 @@
 ---
-title: "Portfolio of Stocks"
+title: "StockWatch"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: html_document
+output: 
+  html_document:
+    theme: flatly
 ---
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(quantmod)
@@ -13,7 +15,10 @@ library(ggplot2)
 library(plotly)
 library(blastula)
 library(DT)
+library(data.table)
 library(fontawesome)
+library(lubridate)
+library(PerformanceAnalytics)
 
 # proj functions
 source(here("VisualizeStocks", "fn", "functions.R"))
@@ -23,62 +28,40 @@ date_time <- add_readable_time()
 
 # detail crosswalk
 cx <- read.csv(here("VisualizeStocks", "Data", "nasdaq_screener.csv")) %>% janitor::clean_names()
-subset <- cx %>% 
-  # string to numeric 
-  mutate(
-    x_change  = as.numeric(gsub("%", "", x_change)),
-    last_sale = as.numeric(gsub('\\$|,', '', last_sale)),
-  ) %>% 
-  group_by(industry) %>% 
-  mutate(
-    count_industry = n()
-  ) %>% 
-  ungroup() %>% 
-  filter(
-    (!is.na(industry) & industry != "") &
-    count_industry > 10
-  )
-
-subset_caps <- subset %>% 
-  mutate(
-    caps = case_when(
-      market_cap >= 250000000   & market_cap < 2000000000  ~ "small-cap",
-      market_cap >= 2000000000  & market_cap < 10000000000 ~ "mid-cap",
-      market_cap >= 10000000000                            ~ "large-cap",
-      TRUE                                                 ~ "other-cap"
-    )
-  ) 
-# %>% 
-#   group_by(sector, caps) %>% 
+# subset <- cx %>% 
+#   # string to numeric 
+#   mutate(
+#     x_change  = as.numeric(gsub("%", "", x_change)),
+#     last_sale = as.numeric(gsub('\\$|,', '', last_sale)),
+#   ) %>% 
+#   group_by(industry) %>% 
+#   mutate(
+#     count_industry = n()
+#   ) %>% 
+#   ungroup() %>% 
+#   filter(
+#     (!is.na(industry) & industry != "") &
+#     count_industry > 10
+#   )
+# 
+# subset_caps <- subset %>% 
+#   mutate(
+#     caps = case_when(
+#       market_cap >= 250000000   & market_cap < 2000000000  ~ "small-cap",
+#       market_cap >= 2000000000  & market_cap < 10000000000 ~ "mid-cap",
+#       market_cap >= 10000000000                            ~ "large-cap",
+#       TRUE                                                 ~ "other-cap"
+#     )
+#   ) %>%
+#   group_by(sector, caps) %>%
 #   summarize(
-#     n(), 
-#     min = min(x_change), 
-#     max = max(x_change), 
+#     n(),
+#     min = min(x_change),
+#     max = max(x_change),
 #     mean = mean(x_change)
-#   ) 
-
-subset_caps %>% 
-  #filter(last_sale < 200, x_change < 20) %>% 
-  filter(caps != "other-cap") %>% 
-  ggplot(aes(x = caps, y = x_change)) + 
-  geom_boxplot(
-            # custom boxes
-        color="blue",
-        fill="blue",
-        alpha=0.2,
-        
-        # Notch?
-        notch=TRUE,
-        notchwidth = 0.8,
-        
-        # custom outliers
-        outlier.colour="red",
-        outlier.fill="red",
-        outlier.size=3
-  ) +
-  facet_grid(.~sector)
-metals <- subset %>% filter(industry == "Precious Metals") %>% select(symbol) %>% pull()
-package_food <- subset %>% filter(sector == "Basic Materials") %>% select(symbol) %>% pull()
+#   )
+# 
+# package_food <- subset %>% filter(sector == "Consumer Discretion") %>% select(symbol) %>% pull()
 
 ```
 Good Morning: This is a daily review of the stocks in your portfolio, updated on `r date_time`. The data is lagged by ~1 day.
@@ -86,7 +69,12 @@ Good Morning: This is a daily review of the stocks in your portfolio, updated on
 ---
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-symbols <- package_food
+symbols <- c("HOOD", "CLBR", "NVDA", "BBAI", "BKSY", "HIMS", "ONDS",
+             "AAPL", "TSLA", "ASTS", "MSTR", "TQQQ", "SOXL", "CORZ",
+             "ALT", "CCCM", "PLTR", "ACHR", "GOOGL", "TMC", "SPY", 
+             "UNH", "ROBN", "MSTY", "RTAC", "MIRA", "SOFI", "AMZN", "COIN",
+             "SQQQ", "RZLV", "UTI", "TGT", "NET", "COF",  "CHWY", 
+             "CTM", "META", "NFLX", "AMD", "DIS", "SHOP")
 
 symbols <- sort(symbols)
 
@@ -116,41 +104,22 @@ main_df <- map_df(
 ) 
 
 constructs <-  main_df %>% 
-  group_by(stock) %>% 
-  mutate(
-    # --- Volume Calculations --- 
-    sma_vol   = TTR::EMA(Volume, n = 7),
-    diff_vol   = sma_vol- lag(sma_vol, 7) ,
-    pct_vol  = (diff_vol/lag(sma_vol, 7) - 1) * 100,
-    
-    # --- Price Averages ---
-    ema_close  = TTR::EMA(Close, n = 7),
-    pct_emavg = (ema_close/lag(ema_close, 7) - 1) * 100,
-    
-    # --- Price Changes ---
-    # Daily 
-    diff_prev  = Close- lag(Close) ,
-    DayOverDay  = (diff_prev/abs(lag(Close))),
-    
-    # Weekly
-    diff_week  = Close- lag(Close, 7) ,
-    WeekOverWeek  = (diff_week/abs(lag(Close, 7))),
-    
-    # Monthly
-    diff_month = Close- lag(Close, 30) ,
-    MonthOverMonth = (diff_month/abs(lag(Close, 30))),
-    
-    # Year
-    diff_year = Close- lag(Close, 252) ,
-    YearOverYear = (diff_year/abs(lag(Close, 30)))
-    
-  ) %>%
+  add_constructs() %>%
   ungroup() %>%
   left_join(
     cx,
     by = c("stock" = "symbol")
   )
   
+
+# backtest strategy (1 year of data) 
+bt_data  <- constructs %>% filter(date >= today() - 252)
+backtest <- split(bt_data, bt_data$stock) %>% map(backtest_strategy)
+bt_subset <- do.call("rbind", backtest) %>% slice_max(date) %>% select(stock, signal, signal_lag, execute)
+
+# eval and plot backtesting results
+bt_eval <- map(backtest, eval_strategy)
+bt_plots <- map(backtest, plot_strategy)
 
 split_df <- split(constructs, constructs$stock)
 list_infl <- map(symbols, ~get_inflections(.x, df = split_df))
@@ -163,24 +132,28 @@ names(list_infl) <- symbols
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 constructs %>% 
   slice_max(date) %>% 
+  left_join(bt_subset, by = c("stock")) %>% 
   mutate(
-    delta_volume = ifelse(pct_vol > 0, fa(name = "arrow-up", fill = "green"), 
-                  ifelse(pct_vol < 0, fa(name = "arrow-down", fill = "red"), "")),
+    delta_volume = ifelse(dod_vol > 0, fa(name = "arrow-up", fill = "green"), 
+                  ifelse(dod_vol < 0, fa(name = "arrow-down", fill = "red"), "")),
     delta_close  = ifelse(pct_emavg > 0, fa(name = "arrow-up", fill = "green"), 
                   ifelse(pct_emavg < 0, fa(name = "arrow-down", fill = "red"), ""))
     ) %>% 
-  select(name, stock, Close, DayOverDay, WeekOverWeek, MonthOverMonth, YearOverYear, delta_volume, delta_close) %>% 
+  select(stock, Close, DoD, WoW, MoM, YoY, delta_volume, delta_close, trend, signal, signal_lag, execute) %>% 
   DT::datatable(
     escape = FALSE,
     options = list(pageLength = 30, autoWidth = TRUE)
   ) %>% 
   DT::formatStyle(
-    c("DayOverDay", "WeekOverWeek", "MonthOverMonth", "YearOverYear"),
+    c("DoD", "WoW", "MoM", "YoY"),
     backgroundColor = DT::styleInterval(0, c('pink', 'lightgreen'))
+    ) %>%
+  DT::formatStyle(
+    c("signal", "signal_lag"),
+    backgroundColor = DT::styleEqual(c('Buy', 'Sell', 'Neutral'), c('green', 'orange', 'lightgrey'))
     ) %>% 
-  DT::formatPercentage(c("DayOverDay", "WeekOverWeek", "MonthOverMonth", "YearOverYear"),1) %>% 
+  DT::formatPercentage(c("DoD", "WoW", "MoM", "YoY"),1) %>% 
   DT::formatRound(c("Close"), 2)
-
 ```
 
 ### Charts {.tabset}
@@ -189,6 +162,11 @@ constructs %>%
 imls_slides <- lapply(symbols, function(x) {
   knitr::knit_child(text = c('',
     '#### `r x` {.tabset}',
+    '##### `r x` sd indic',
+    '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE, warning = FALSE}',
+    'bt_eval[[x]]',
+    'bt_plots[[x]]',
+    '```',
     '##### `r x` Static 2mo',
     '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE}',
     'plot_stock(x, data = stock_df, time = "last 2 month")',
@@ -196,10 +174,6 @@ imls_slides <- lapply(symbols, function(x) {
     '##### `r x`Static 1yr',
     '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE}',
     'plot_stock(x, data = stock_df, time = "last 1 year")',
-    '```',
-    '##### `r x` Interactive',
-    '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE}',
-    'plotly_stock(x, data = split_df)',
     '```',
     ''
   ), envir = environment(), quiet = TRUE)
