@@ -54,7 +54,6 @@ jobs:
           install.packages('fontawesome')
           install.packages('PerformanceAnalytics')
           install.packages('lubridate')
-          install.packages('janitor')
 
         shell: Rscript {0}
 
