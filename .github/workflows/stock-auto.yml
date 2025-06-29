@@ -63,6 +63,9 @@ jobs:
       - name: Render document
         run: Rscript -e 'rmarkdown::render(here::here("VisualizeStocks/stock_plots.Rmd"), output_format = "html_document", output_file = "index.html")'
 
+      - name: Render document
+        run: Rscript -e 'rmarkdown::render(here::here("StockScanner/stock_scanner.Rmd"), output_format = "html_document", output_file = "index.html")'      
+
       - name: Commit results
         run: |
           git config --local user.email "actions@github.com"
