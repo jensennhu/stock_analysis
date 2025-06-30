@@ -221,7 +221,7 @@ plot_strategy <- function(data){
   plt <- tryCatch({
     # Visualization: Trading Signals
     data %>% 
-      na.omit() %>%
+      #na.omit() %>%
       mutate(execute = as.character(ifelse(execute == 0, NA, execute))) %>% 
       # Remove rows with missing values
       ggplot(aes(x = date)) +
