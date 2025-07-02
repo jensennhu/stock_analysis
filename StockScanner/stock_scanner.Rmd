@@ -70,10 +70,10 @@ Good Morning: This is a daily review of the stocks in your portfolio, updated on
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 symbols <- c("HOOD", "CLBR", "NVDA", "BBAI", "BKSY", "HIMS", "ONDS",
-             "AAPL", "TSLA", "ASTS", "MSTR", "TQQQ", "SOXL", "CORZ",
-             "ALT", "CCCM", "PLTR", "ACHR", "GOOGL", "TMC", "SPY", 
+             "AAPL", "TSLA", "ASTS", "MSTR","ALT", "CCCM", "PLTR", 
+             "ACHR", "GOOGL", "TMC", "SPY", "COIN", "ONDS", "OUST", "ELF",
              "UNH", "ROBN", "MSTY", "RTAC", "MIRA", "SOFI", "AMZN", "COIN",
-             "SQQQ", "RZLV", "UTI", "TGT", "NET", "COF",  "CHWY", 
+             "RZLV", "UTI", "TGT", "NET", "COF",  "CHWY", "QBTS", "RGTI",
              "CTM", "META", "NFLX", "AMD", "DIS", "SHOP")
 
 symbols <- sort(symbols)
