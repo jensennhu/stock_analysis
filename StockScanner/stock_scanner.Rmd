@@ -74,7 +74,7 @@ symbols <- c("HOOD", "CLBR", "NVDA", "BBAI", "BKSY", "HIMS", "ONDS",
              "ACHR", "GOOGL", "TMC", "SPY", "COIN", "ONDS", "OUST", "ELF",
              "UNH", "ROBN", "MSTY", "RTAC", "MIRA", "SOFI", "AMZN", "COIN",
              "RZLV", "UTI", "TGT", "NET", "COF",  "CHWY", "QBTS", "RGTI",
-             "CTM", "META", "NFLX", "AMD", "DIS", "SHOP")
+             "CTM", "META", "NFLX", "AMD", "DIS", "SHOP", "IONQ")
 
 symbols <- sort(symbols)
 
