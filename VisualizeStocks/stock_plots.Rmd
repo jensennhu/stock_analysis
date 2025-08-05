@@ -56,7 +56,7 @@ constructs <-  main_df %>%
 # backtest strategy (1 year of data) 
 bt_data  <- constructs %>% filter(date >= today() - 252)
 backtest <- split(bt_data, bt_data$stock) %>% map(backtest_strategy)
-bt_subset <- do.call("rbind", backtest) %>% slice_max(date) %>% select(stock, signal, signal_lag, execute)
+bt_subset <- do.call("rbind", backtest) %>% slice_max(date) %>% select(stock, signal, execute)
 
 # eval and plot backtesting results
 bt_eval <- map(backtest, eval_strategy)
@@ -80,7 +80,7 @@ constructs %>%
     delta_close  = ifelse(pct_emavg > 0, fa(name = "arrow-up", fill = "green"), 
                   ifelse(pct_emavg < 0, fa(name = "arrow-down", fill = "red"), ""))
     ) %>% 
-  select(stock, Close, DoD, WoW, MoM, YoY, delta_volume, delta_close, trend, signal, signal_lag, execute) %>% 
+  select(stock, Close, DoD, WoW, MoM, YoY, delta_volume, delta_close, trend, signal, execute) %>% 
   DT::datatable(
     escape = FALSE,
     options = list(pageLength = 30, autoWidth = TRUE)
