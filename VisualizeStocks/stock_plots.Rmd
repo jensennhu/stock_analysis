@@ -90,7 +90,7 @@ constructs %>%
     backgroundColor = DT::styleInterval(0, c('pink', 'lightgreen'))
     ) %>%
   DT::formatStyle(
-    c("signal", "signal_lag"),
+    c("signal"),
     backgroundColor = DT::styleEqual(c('Buy', 'Sell', 'Neutral'), c('green', 'orange', 'lightgrey'))
     ) %>% 
   DT::formatPercentage(c("DoD", "WoW", "MoM", "YoY"),1) %>% 
