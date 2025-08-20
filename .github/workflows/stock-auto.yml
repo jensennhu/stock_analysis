@@ -54,6 +54,9 @@ jobs:
           install.packages('fontawesome')
           install.packages('PerformanceAnalytics')
           install.packages('lubridate')
+          install.packages('patchwork')
+          install.packages('httr')
+          install.packages('jsonlite')
 
         shell: Rscript {0}
 
