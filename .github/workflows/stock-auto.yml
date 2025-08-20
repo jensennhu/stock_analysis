@@ -57,6 +57,7 @@ jobs:
           install.packages('patchwork')
           install.packages('httr')
           install.packages('jsonlite')
+          install.packages('janitor')
 
         shell: Rscript {0}
 
