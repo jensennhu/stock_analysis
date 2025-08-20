@@ -1,5 +1,5 @@
 ---
-title: "Portfolio of Stocks"
+title: "Not in this Economy!"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
 ---
@@ -15,115 +15,222 @@ library(blastula)
 library(data.table)
 library(DT)
 library(lubridate)
+library(patchwork)
 library(fontawesome)
 library(PerformanceAnalytics)
+library(httr)
+library(jsonlite)
 
 # proj functions
 source(here("VisualizeStocks", "fn", "functions.R"))
 
 # Get a nicely formatted date/time string
 date_time <- add_readable_time()
-
-# # detail crosswalk
-cx <- read.csv(here("VisualizeStocks", "Data", "nasdaq_screener.csv"))
 ```
-Good Morning: This is a daily review of the stocks in your portfolio, updated on `r date_time`. The data is lagged by ~1 day.
+Good Morning: This is a daily review of the stock market, updated on `r date_time`. The data is lagged by ~1 day.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height = 5, fig.width=10, fig.align='C'}
+
+# Obtaining fear and greed crypto data
+# Send GET request
+response <- GET(
+ "https://api.alternative.me/fng/?limit=1000",
+  add_headers(`User-Agent` = "Mozilla/5.0")
+  )
+
+raw_content <- httr::content(response)
+fear_greed_data <- jsonlite::fromJSON(rawToChar(response$content))
+fear_greed_df <- fear_greed_data$data
+# Convert into numeric for value and timestamp columns
+fear_greed_df$value <- as.numeric(fear_greed_df$value)
+fear_greed_df$timestamp <- as.numeric(fear_greed_df$timestamp)
+
+# Convert timestamp into date format:
+# Example: as.Date(as.POSIXct(1629763200, origin = "1970-01-01"))
+fear_greed_df$timestamp <- as.Date(as.POSIXct(fear_greed_df$timestamp, origin = "1970-01-01"))
+curr_value <- fear_greed_df[!is.na(fear_greed_df$time_until_update),]$value_classification
+curr_time  <- fear_greed_df[!is.na(fear_greed_df$time_until_update),]$timestamp
+
+
+fear_greed_df %>% 
+  filter(timestamp > today() - 200) %>% 
+  ggplot(aes(x = timestamp, y = value))+
+  geom_line() +
+  scale_x_date(date_breaks = "1 week", date_labels = "%m-%d-%Y") +
+  geom_point(size = 1) +
+  ggtitle(paste0("Fear & Greed Index: Today We Feel ", curr_value), subtitle = paste0("(", curr_time, ")")) +
+  theme(legend.position = "none",
+      plot.title = element_text(size=22),
+      axis.text.x = element_text(angle = 90),
+      axis.title.x=element_blank()
+    )
+```
+
 
 ---
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height = 5, fig.width=10, fig.align='C'}
 
-symbols <- c("AAPL", "COST", "CRCL", "ELF", "JPM", "GOOGL", "AMZN", "GLD", "NET", "VUG", "MSFT", "NVDA", "VOO", "BYDDY", "V", "VDADX", "QQQM", "QQQ", "VYM", "SCHD", "O", "TSM", "BABA", "VDE", "NBIS", "GELYF", "BA", "EL", "TCMD", "CRWV")
+# Send GET request
+response <- GET(
+  "https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=10000", 
+  add_headers(`User-Agent` = "Mozilla/5.0")
+  )
+
+# Parse JSON content
+json_data <- content(response, as = "text", encoding = "UTF-8")
+parsed <- fromJSON(json_data, flatten = TRUE)
+
+# Extract table data
+table <- parsed$data$table
+headers_map <- unlist(table$headers, use.names = FALSE)
+rows <- table$rows
+df <- tibble(rows) %>% select(-url)
+
+# Rename columns based on headers_map
+setnames(df, old = names(df), new = headers_map)
+
+# Write to CSV
+fwrite(df, here("VisualizeStocks", "Data", paste("nasdaq_screener", today(), ".csv")))
+
+# detail crosswalk
+cx <- read.csv(here("VisualizeStocks", "Data", "nasdaq_sector_industry.csv"))
+
+overall <- df %>% left_join(
+  cx %>% select(-Name), 
+  by = c("Symbol")
+)
 
 
-symbols <- sort(symbols)
-
-# gather list of stocks 
-stock_df <- map(symbols, ~getSymbols(.x, src='yahoo', from="2023-01-02", auto.assign=FALSE))
-names(stock_df) <- symbols
-
-# stack data
-main_df <- map_df(
-  symbols,
-  ~clean_data(.x, data = stock_df)
-) 
-
-# add constructs
-constructs <-  main_df %>% 
-  add_constructs() %>% 
-  ungroup() %>% 
-  left_join(cx, by = c("stock" = "Symbol"))
-
-# backtest strategy (1 year of data) 
-bt_data  <- constructs %>% filter(date >= today() - 252)
-backtest <- split(bt_data, bt_data$stock) %>% map(backtest_strategy)
-bt_subset <- do.call("rbind", backtest) %>% slice_max(date) %>% select(stock, signal, execute)
-
-# eval and plot backtesting results
-bt_eval <- map(backtest, eval_strategy)
-bt_plots <- map(backtest, plot_strategy)
-
-split_df <- split(constructs, constructs$stock)
-list_infl <- map(symbols, ~get_inflections(.x, df = split_df))
-names(list_infl) <- symbols
-
-```
-##  {.tabset}
-
-### Summary Table
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-constructs %>% 
-  slice_max(date) %>% 
-  left_join(bt_subset, by = c("stock")) %>% 
+subset <- overall %>% 
+  janitor::clean_names() %>% 
+  # string to numeric
   mutate(
-    delta_volume = ifelse(dod_vol > 0, fa(name = "arrow-up", fill = "green"), 
-                  ifelse(dod_vol < 0, fa(name = "arrow-down", fill = "red"), "")),
-    delta_close  = ifelse(pct_emavg > 0, fa(name = "arrow-up", fill = "green"), 
-                  ifelse(pct_emavg < 0, fa(name = "arrow-down", fill = "red"), ""))
-    ) %>% 
-  select(stock, Close, DoD, WoW, MoM, YoY, delta_volume, delta_close, trend, signal, execute) %>% 
-  DT::datatable(
-    escape = FALSE,
-    options = list(pageLength = 30, autoWidth = TRUE)
+    percent_change  = as.numeric(gsub("%", "", percent_change)),
+    last_sale       = as.numeric(gsub('\\$|,', '', last_sale)),
+  ) %>%
+  group_by(industry) %>%
+  mutate(count_industry = n()) %>%
+  ungroup() %>%
+  # keep non-missing industry & industries w/10+ stocks
+  filter(
+    (!is.na(industry) & industry != "") &
+    count_industry > 10
+  ) 
+
+subset <- subset %>% 
+  mutate(
+    caps = case_when(
+      market_cap >= 250000000   & market_cap < 2000000000  ~ "small-cap",
+      market_cap >= 2000000000  & market_cap < 10000000000 ~ "mid-cap",
+      market_cap >= 10000000000                            ~ "large-cap",
+      TRUE                                                 ~ "other-cap"
+    )
+  )
+
+sector_top_5 <- subset %>% 
+  group_by(sector) %>% 
+  arrange(-percent_change) %>% 
+  slice(1:5) %>%  
+  summarize(stocks = paste0(symbol, " (", percent_change, "%)",  collapse = ", ")) 
+
+x <- subset %>% 
+  group_by(sector) %>%
+  summarize(
+    n(),
+    min  = min(percent_change,   na.rm = TRUE),
+    max  = max(percent_change,   na.rm = TRUE),
+    mean = mean(percent_change, na.rm = TRUE)
   ) %>% 
-  DT::formatStyle(
-    c("DoD", "WoW", "MoM", "YoY"),
-    backgroundColor = DT::styleInterval(0, c('pink', 'lightgreen'))
-    ) %>%
-  DT::formatStyle(
-    c("signal"),
-    backgroundColor = DT::styleEqual(c('Buy', 'Sell', 'Neutral'), c('green', 'orange', 'lightgrey'))
-    ) %>% 
-  DT::formatPercentage(c("DoD", "WoW", "MoM", "YoY"),1) %>% 
-  DT::formatRound(c("Close"), 2)
+  arrange(desc(mean)) %>% 
+  ggplot(aes(mean, reorder(sector, mean))) +
+  geom_bar(stat = "identity") +
+  ggtitle("Avg. Change by Sector") + ylab("") + xlab("Average % Change") + 
+  theme_classic()
+  
+y <- subset %>% 
+  group_by(sector, caps) %>%
+  summarize(
+    n(),
+    min  = min(percent_change,   na.rm = TRUE),
+    max  = max(percent_change,   na.rm = TRUE),
+    mean = mean(percent_change, na.rm = TRUE)
+  ) %>% 
+  arrange(desc(mean)) %>% 
+  ggplot(aes(mean, reorder(sector, mean))) +
+  geom_bar(stat = "identity", aes(fill = mean > 0)) +
+  ggtitle("Avg. Change by Sector & Market Cap") + ylab("") + xlab("Average % Change") + 
+  theme_classic() + 
+  theme(legend.position="none") +
+  facet_wrap(~caps)
 
+x + y
 ```
 
-### Charts {.tabset}
-```{r, echo=FALSE, results='asis'}
+<!-- ```{r echo=FALSE, message=FALSE, warning=FALSE} -->
 
-imls_slides <- lapply(symbols, function(x) {
-  knitr::knit_child(text = c('',
-    '#### `r x` {.tabset}',
-    '##### `r x` Backtest 1yr',
-    '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE, warning = FALSE}',
-    'bt_eval[[x]]',
-    'bt_plots[[x]]',
-    '```',
-    '##### `r x` Static 2mo',
-    '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE}',
-    'plot_stock(x, data = stock_df, time = "last 2 month")',
-    '```',
-    '##### `r x`Static 1yr',
-    '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE}',
-    'plot_stock(x, data = stock_df, time = "last 1 year")',
-    '```',
-    '##### `r x` Interactive',
-    '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE}',
-    'plotly_stock(x, data = split_df)',
-    '```',
-    ''
-  ), envir = environment(), quiet = TRUE)
-})
-cat(unlist(imls_slides), sep = '\n')
-```
+<!-- symbols <- c("MSTR", "MARA", "RIOT", "BITF", "CLSK", "IREN", "TSLA", "BTC", "BITO", "IBIT", "HIVE", "HUT", "ETHE", "AETH", "COIN", "GLXY.TO", "BITQ", "BTF" ) -->
+
+
+<!-- symbols <- sort(symbols) -->
+
+<!-- # gather list of stocks  -->
+<!-- stock_df <- map(symbols, ~getSymbols(.x, src='yahoo', from="2023-01-02", auto.assign=FALSE)) -->
+<!-- names(stock_df) <- symbols -->
+
+<!-- # stack data -->
+<!-- main_df <- map_df( -->
+<!--   symbols, -->
+<!--   ~clean_data(.x, data = stock_df) -->
+<!-- )  -->
+
+<!-- # add constructs -->
+<!-- constructs <-  main_df %>%  -->
+<!--   add_constructs()  -->
+
+<!-- # backtest strategy (1 year of data)  -->
+<!-- bt_data  <- constructs %>% filter(date >= today() - 252) -->
+<!-- backtest <- split(bt_data, bt_data$stock) %>% map(backtest_strategy) -->
+<!-- bt_subset <- do.call("rbind", backtest) %>% slice_max(date) %>% select(stock, signal, execute) -->
+
+<!-- # eval and plot backtesting results -->
+<!-- bt_eval <- map(backtest, eval_strategy) -->
+<!-- bt_plots <- map(backtest, plot_strategy) -->
+
+<!-- split_df <- split(constructs, constructs$stock) -->
+<!-- list_infl <- map(symbols, ~get_inflections(.x, df = split_df)) -->
+<!-- names(list_infl) <- symbols -->
+
+<!-- ``` -->
+<!-- ##  {.tabset} -->
+
+<!-- ### Summary Table -->
+<!-- ```{r echo=FALSE, message=FALSE, warning=FALSE} -->
+<!-- constructs %>%  -->
+<!--   slice_max(date) %>%  -->
+<!--   left_join(bt_subset, by = c("stock")) %>%  -->
+<!--   mutate( -->
+<!--     delta_volume = ifelse(dod_vol > 0, fa(name = "arrow-up", fill = "green"),  -->
+<!--                   ifelse(dod_vol < 0, fa(name = "arrow-down", fill = "red"), "")), -->
+<!--     delta_close  = ifelse(pct_emavg > 0, fa(name = "arrow-up", fill = "green"),  -->
+<!--                   ifelse(pct_emavg < 0, fa(name = "arrow-down", fill = "red"), "")) -->
+<!--     ) %>%  -->
+<!--   select(stock, Close, DoD, WoW, MoM, YoY, delta_volume, delta_close, trend, signal, execute) %>%  -->
+<!--   DT::datatable( -->
+<!--     escape = FALSE, -->
+<!--     options = list(pageLength = 30, autoWidth = TRUE) -->
+<!--   ) %>%  -->
+<!--   DT::formatStyle( -->
+<!--     c("DoD", "WoW", "MoM", "YoY"), -->
+<!--     backgroundColor = DT::styleInterval(0, c('pink', 'lightgreen')) -->
+<!--     ) %>% -->
+<!--   DT::formatStyle( -->
+<!--     c("signal"), -->
+<!--     backgroundColor = DT::styleEqual(c('Buy', 'Sell', 'Neutral'), c('green', 'orange', 'lightgrey')) -->
+<!--     ) %>%  -->
+<!--   DT::formatPercentage(c("DoD", "WoW", "MoM", "YoY"),1) %>%  -->
+<!--   DT::formatRound(c("Close"), 2) -->
+
+<!-- ``` -->
+
 

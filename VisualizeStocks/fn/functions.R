@@ -208,10 +208,15 @@ eval_strategy <- function(results){
       )
     
     # Print performance comparison
-    knitr::kable(
-      cbind(rbind(Strategy = strategy_perf, Buy_Hold = bh_perf),  capital_col),
-      caption = "Performance Comparison"
-    )}, error = function(msg){
+    cbind(rbind(Strategy = strategy_perf, Buy_Hold = bh_perf),  capital_col) %>% 
+      DT::datatable(
+        escape = FALSE,
+        options = list(autoWidth = TRUE),
+        caption = 'Total Return (initial cap $10,000): Custom vs Buy&Hold Strategy'
+      ) %>% 
+      DT::formatPercentage(c("Total_Return", "Annualized_Return")) %>% 
+      DT::formatCurrency(c("Final_Capital"))
+     }, error = function(msg){
       return(NA)
     })
     
@@ -221,20 +226,20 @@ plot_strategy <- function(data){
   plt <- tryCatch({
     # Visualization: Trading Signals
     data %>% 
-      #na.omit() %>%
-      mutate(execute = as.character(ifelse(execute == 0, NA, execute))) %>% 
+      filter(date >= today()-200) %>% 
+      mutate(execute = as.character(execute)) %>% 
       # Remove rows with missing values
       ggplot(aes(x = date)) +
       geom_line(aes(y = Close), size = 1) +
       geom_line(aes(y = ema), color = "blue", linetype = "dashed") +
       geom_ribbon(aes(ymin = lower, ymax = upper), fill = "gray", alpha = 0.3) +
-      geom_point(aes(y = Close, color = signal_lag), size = 2) +
+      geom_point(aes(y = Close, color = signal), size = 2) +
       scale_color_manual(values = c("Buy" = "green", "Sell" = "red", "Neutral" = "gray")) +
-      geom_point(aes(y = Close, shape = execute), size = 4) +
-      scale_shape_manual(values=c(4))+
-      labs(title = "Price with Trading Signals", y = "Price") +
+      geom_point(aes(y = Close, shape = execute), size = 2) +
+      scale_shape_manual(values=c(1, 4))+
+      labs(title = "Price with Trading Signals in the Last 200 Days", y = "Price") +
       theme_minimal()}, error = function(msg){
         return(NA)
-    })
+      })
   return(plt)
 }
