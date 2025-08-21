@@ -65,10 +65,10 @@ jobs:
         uses: actions/checkout@v3
           
       - name: Render document
-        run: Rscript -e 'rmarkdown::render(here::here("VisualizeStocks/stock_plots.Rmd"), output_format = "html_document", output_file = "index.html")'
+        run: Rscript -e 'rmarkdown::render(here::here("01_reports/StockMarket/stock_market.Rmd"), output_format = "html_document", output_file = "index.html")'
 
       - name: Render document
-        run: Rscript -e 'rmarkdown::render(here::here("StockScanner/stock_scanner.Rmd"), output_format = "html_document", output_file = "index.html")'      
+        run: Rscript -e 'rmarkdown::render(here::here("01_reports/StockScanner/stock_scanner.Rmd"), output_format = "html_document", output_file = "index.html")'      
 
       - name: Commit results
         run: |
