@@ -20,6 +20,7 @@ library(fontawesome)
 library(PerformanceAnalytics)
 library(httr)
 library(jsonlite)
+library(janitor)
 
 # proj functions
 source(here("VisualizeStocks", "fn", "functions.R"))
