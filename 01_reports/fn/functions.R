@@ -29,6 +29,7 @@ add_constructs <- function(data){
       dod_vol   = diff_vol/lag(diff_vol),
       
       ema_vol = TTR::EMA(Volume, n = 7),
+      diff_ema_vol  = (ema_vol/lag(ema_vol) - 1) * 100,
       
       # --- Price Averages --- EMA 7
       ema_close = TTR::EMA(Close, n = 7),

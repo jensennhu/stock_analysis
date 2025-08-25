@@ -34,10 +34,10 @@ Good Morning: This is a daily review of the stocks in your portfolio, updated on
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-symbols <- c("HOOD", "BBAI", "HIMS", "ONDS", "BULL",
+symbols <- c("HOOD", "BBAI", "HIMS", "ONDS", "BULL", "NIO",
              "MSTR", "BTBT", "ACHR", "TMC", "SPY",
-             "UNH", "MSTY", "UTI", "TGT", "NET",
-             "CHWY", "QBTS", "RGTI", "NFLX", "ON",
+             "UNH", "MSTY", "QBTS", "HIMS", "NET",
+             "CHWY", "QBTS", "RGTI", "NFLX", "OPEN",
              "ULTY", "CMG","JOBY", "PANW","FIG",
              "HOVR", "AMD", "DIS", "SHOP", "IONQ", "RDDT")
 
@@ -105,8 +105,9 @@ Market data as of `r date_of_data`.
 
 constructs %>% 
   mutate(
-    delta_volume = ifelse(dod_vol > 0, fa(name = "arrow-up", fill = "green"), 
-                   ifelse(dod_vol < 0, fa(name = "arrow-down", fill = "red"), ""))
+    delta_volume = paste0(round(diff_ema_vol,2), "% ", 
+                          ifelse(diff_ema_vol > 0, fa(name = "arrow-up", fill = "green"),           
+                                 ifelse(diff_ema_vol < 0, fa(name = "arrow-down", fill = "red"), "")))
     ) %>% 
   select(
     "Symbol" = stock, 
@@ -115,7 +116,7 @@ constructs %>%
     WoW, 
     MoM, 
     YoY, 
-    "Volume Chg" = delta_volume, 
+    "Volume Chg" = delta_volume,
     "Trend"      = trend, 
     "Signal"     = signal
     ) %>% 
