@@ -35,13 +35,12 @@ Good Morning: This is a daily review of the stocks in your portfolio, updated on
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 symbols <- c("HOOD", "BBAI", "HIMS", "ONDS", "BULL", "NIO",
-             "MSTR", "BTBT", "ACHR", "TMC", "SPY",
-             "UNH", "MSTY", "QBTS", "HIMS", "NET",
-             "CHWY", "QBTS", "RGTI", "NFLX", "OPEN",
+             "MSTR", "BTBT", "ACHR", "TMC", "SPY", "HUMA",
+             "UNH", "MSTY", "QBTS", "NET", "COIN",
+             "CHWY", "RGTI", "NFLX", "OPEN",
              "ULTY", "CMG","JOBY", "PANW","FIG",
              "HOVR", "AMD", "DIS", "SHOP", "IONQ", "RDDT")
 
-port_symbols <- c("AAPL", "COST", "CRCL", "ELF", "JPM", "GOOGL", "AMZN", "GLD", "NET", "VUG", "MSFT", "NVDA", "VOO", "BYDDY", "V", "VDADX", "QQQM", "QQQ", "VYM", "SCHD", "O", "TSM", "BABA", "VDE", "NBIS", "GELYF", "BA", "EL", "TCMD", "CRWV")
 
 symbols <- sort(symbols)
 
