@@ -22,6 +22,7 @@ plot_stock <- function(data, sym, time = ""){
 
 add_constructs <- function(data){
   data %>% 
+    arrange(stock, date) %>%
     group_by(stock) %>% 
     mutate(
       # --- Volume Calculations --- 
@@ -50,7 +51,7 @@ add_constructs <- function(data){
       
       # Yearly
       diff_year      = Close- lag(Close, 252) ,
-      YoY = (diff_month/abs(lag(Close, 252)))
+      YoY = (diff_year/abs(lag(Close, 252)))
       
     )  %>% 
     ungroup() %>% 
