@@ -34,7 +34,7 @@ Good Morning: This is a daily review of the stocks in your portfolio, updated on
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-symbols <- c("ONDS","RCAT","DPRO","LPTH","VWAV","DDD","IBRX","FIG","RIVN","RXRX","ACHR","NIO","OPEN","QUBT","IONQ","INFQ","ZETA","HUMA","SPIR","RDW","SIDU","RKLB","SLNH","ASTS","SATL","CPSH","SPCX","ASTI","EOSE","SMR","UUUU","TMQ","FCX","VXUS","VIX","IWM","COPX","GLD","QQQ","VOO","SPY","HOOD","CRCL","GLXY","CIFR","IREN","CRWV","COIN","MSTR","CLSK","IBIT","WULF","CAN","ETHA","PLTR","ORCL","AAPL","NVDA","MSFT","GOOGL","AMZN","META","SIVEF","EMXC","USO","AAOI","UNG","FISV","TOST","OSCR","XYZ","SHOP","PAYX","HRB","INTU","CQQQ","PGJ","KWEB","JD","MCHI","BABA","BTBT","MPWR","TEL","MU","SOXX","WDAY","ADSK","CMG","SPGI","CNP","MCD","CCLD","COST","RDDT","WYFI","XFAB","NET","QS","TSLA","SHAZ","CCXI","OUST","TSM")
+symbols <- c("ONDS","RCAT","DPRO","LPTH","VWAV","DDD","IBRX","FIG","RIVN","RXRX","ACHR","NIO","OPEN","QUBT","IONQ","INFQ","ZETA","HUMA","SPIR","RDW","SIDU","RKLB","SLNH","ASTS","SATL","CPSH","SPCX","ASTI","EOSE","SMR","UUUU","TMQ","FCX","VXUS","VIX","IWM","COPX","GLD","QQQ","VOO","SPY","HOOD","CRCL","GLXY","CIFR","IREN","CRWV","COIN","MSTR","CLSK","IBIT","WULF","CAN","ETHA","PLTR","ORCL","AAPL","NVDA","MSFT","GOOGL","AMZN","META","SIVEF","EMXC","USO","AAOI","UNG","TOST","OSCR","XYZ","SHOP","PAYX","HRB","INTU","PGJ","KWEB","JD","MCHI","BABA","BTBT","MPWR","TEL","MU","SOXX","WDAY","ADSK","CMG","SPGI","CNP","MCD","CCLD","COST","RDDT","WYFI","XFAB","NET","QS","TSLA", "OUST","TSM")
 
 
 symbols <- sort(symbols)
