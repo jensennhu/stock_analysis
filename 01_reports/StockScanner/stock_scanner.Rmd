@@ -34,7 +34,7 @@ Good Morning: This is a daily review of the stocks in your portfolio, updated on
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-symbols <- c("ONDS","RCAT","DPRO","LPTH","VWAV","DDD","IBRX","FIG","RIVN","RXRX","ACHR","NIO","OPEN","QUBT","IONQ","INFQ","ZETA","HUMA","SPIR","RDW","SIDU","RKLB","SLNH","ASTS","SATL","CPSH","SPCX","ASTI","EOSE","SMR","UUUU","TMQ","FCX","VXUS","VIX","IWM","COPX","GLD","QQQ","VOO","SPY","HOOD","CRCL","GLXY","CIFR","IREN","CRWV","COIN","MSTR","CLSK","IBIT","WULF","CAN","ETHA","PLTR","ORCL","AAPL","NVDA","MSFT","GOOGL","AMZN","META","SIVEF","EMXC","USO","AAOI","UNG","TOST","OSCR","XYZ","SHOP","PAYX","HRB","INTU","PGJ","KWEB","JD","MCHI","BABA","BTBT","MPWR","TEL","MU","SOXX","WDAY","ADSK","CMG","SPGI","CNP","MCD","CCLD","COST","RDDT","WYFI","XFAB","NET","QS","TSLA", "OUST","TSM")
+symbols <- c("ONDS","LPTH","DDD","IBRX","FIG","RIVN","RXRX","ACHR","NIO","OPEN","IONQ","INFQ","ZETA","HUMA","RDW","SPCX","EOSE","SMR","UUUU","FCX","VIX","IWM","COPX","GLD","QQQ","SPY","HOOD","CRCL","GLXY","CIFR","IREN","CRWV","COIN","CLSK","IBIT","WULF","CAN","ETHA","PLTR","ORCL","AAPL","NVDA","MSFT","GOOGL","AMZN","META","SIVEF","AAOI","SHOP","BTBT","SOXX","CMG","SPGI","CCLD","COST","RDDT","WYFI","XFAB","NET","QS","TSLA", "OUST","TSM")
 
 
 symbols <- sort(symbols)
@@ -143,11 +143,11 @@ imls_slides <- lapply(symbols, function(x) {
     '```',
     '##### `r x` Static 2mo',
     '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE, warning = FALSE}',
-    'plot_stock(x, data = stock_df, time = "last 2 month")',
+    'plot_stock(x, data = stock_df, time = "last 6 month")',
     '```',
     '##### `r x` Static 1yr',
     '```{r, echo=FALSE, fig.width=8, fig.height=8, message=FALSE, warning = FALSE}',
-    'plot_stock(x, data = stock_df, time = "last 1 year")',
+    'plot_stock(x, data = stock_df, time = "last 2 year")',
     '```',
     ''
   ), envir = environment(), quiet = TRUE)

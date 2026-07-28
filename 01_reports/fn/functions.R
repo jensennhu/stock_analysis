@@ -228,7 +228,7 @@ plot_strategy <- function(data){
   plt <- tryCatch({
     # Visualization: Trading Signals
     data %>% 
-      filter(date >= today()-200) %>% 
+      filter(date >= today()-500) %>% 
       mutate(execute = as.character(execute)) %>% 
       # Remove rows with missing values
       ggplot(aes(x = date)) +
@@ -239,7 +239,7 @@ plot_strategy <- function(data){
       scale_color_manual(values = c("Buy" = "green", "Sell" = "red", "Neutral" = "gray")) +
       geom_point(aes(y = Close, shape = execute), size = 2) +
       scale_shape_manual(values=c(1, 4))+
-      labs(title = "Price with Trading Signals in the Last 200 Days", y = "Price") +
+      labs(title = "Price with Trading Signals in the Last 500 Days", y = "Price") +
       theme_minimal()}, error = function(msg){
         return(NA)
       })
