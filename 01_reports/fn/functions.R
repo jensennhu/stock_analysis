@@ -1,14 +1,19 @@
 
 clean_data <- function(sym, data){
-  
+
+  # some data providers occasionally return rows of all-NA OHLCV
+  # (e.g. a trading halt/glitch); carry forward the last known values
+  # since TTR indicators like EMA() error on non-leading NAs
+  stock_xts <- zoo::na.locf(data[[sym]], na.rm = FALSE)
+
   # convert xts obj to df
   df <- data.frame(
-    date = index(data[[sym]]), 
-    data[[sym]]
-  ) %>% 
+    date = index(stock_xts),
+    stock_xts
+  ) %>%
     mutate(stock = sym)
-  
-  # removes all string values before period in var names 
+
+  # removes all string values before period in var names
   names(df) <- sub(".*\\.", "", names(df))
   return(df)
 }
