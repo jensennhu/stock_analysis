@@ -34,7 +34,11 @@ Good Morning: This is a daily review of the stocks in your portfolio, updated on
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-symbols <- c("ONDS","LPTH","DDD","IBRX","FIG","RIVN","RXRX","ACHR","NIO","OPEN","IONQ","INFQ","ZETA","HUMA","RDW","SPCX","EOSE","SMR","UUUU","FCX","VIX","IWM","COPX","GLD","QQQ","SPY","HOOD","CRCL","GLXY","CIFR","IREN","CRWV","COIN","CLSK","IBIT","WULF","CAN","ETHA","PLTR","ORCL","AAPL","NVDA","MSFT","GOOGL","AMZN","META","SIVEF","AAOI","SHOP","BTBT","SOXX","CMG","SPGI","CCLD","COST","RDDT","WYFI","XFAB","NET","QS","TSLA", "OUST","TSM")
+symbols <- c("ONDS","LPTH","DDD","IBRX","FIG","OPEN","INFQ","EOSE","SMR",
+"VIX","IWM","COPX","GLD","QQQ","SPY", "DRAM",
+"HOOD","CRCL","GLXY","CIFR","IREN","CRWV","COIN","CLSK","IBIT","WULF","ETHA",
+"ORCL","AAPL","NVDA","MSFT","GOOGL","AMZN","META",
+"SOXX","CMG","SPGI","CCLD","RDDT","NET","QS","TSLA")
 
 
 symbols <- sort(symbols)
