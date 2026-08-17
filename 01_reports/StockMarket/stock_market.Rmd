@@ -86,7 +86,7 @@ parsed <- fromJSON(json_data, flatten = TRUE)
 table <- parsed$data$table
 headers_map <- unlist(table$headers, use.names = FALSE)
 rows <- table$rows
-df <- tibble(rows)
+df <- tibble(rows) %>% select(-url)
 
 # Rename columns based on headers_map
 setnames(df, old = names(df), new = headers_map)
