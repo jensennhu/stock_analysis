@@ -34,7 +34,7 @@ Good Morning: This is a daily review of the stocks in your portfolio, updated on
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-symbols <- c("ONDS","LPTH","DDD","IBRX","FIG","OPEN","INFQ","EOSE","SMR",
+symbols <- c("ONDS","LPTH","DDD","OPEN","INFQ","EOSE","SMR",
 "VIX","IWM","COPX","GLD","QQQ","SPY", "DRAM",
 "HOOD","CRCL","GLXY","CIFR","IREN","CRWV","COIN","CLSK","IBIT","ETHA",
 "ORCL","AAPL","NVDA","MSFT","GOOGL","AMZN","META","TSLA")
